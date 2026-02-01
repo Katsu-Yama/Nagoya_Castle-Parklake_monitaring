@@ -1,10 +1,2 @@
-"# fujiyoshida_aneering" 
-"# Hamamatsu_Qaneering" 
-"# Hamamatsu_SmartCity_Hackathon" 
-"# Hamamatsu_SmartCity_Hackathon" 
-"# Hamamatsu_SmartCity_Hackathon" 
-"# 2025-NagoyaBoost_SatelliteData" 
-"# 2025-Koube-reservoir_algae" 
-"# 2025-Koube-reservoir_algae" 
-"# Nagoya_Castle-Parklake_monitaring" 
-"# Nagoya_Castle-Parklake_monitaring" 
+"# 光学衛星データによる、名古屋城の水堀・都市公園の池の藻類増殖モニタリング
+
