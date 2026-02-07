@@ -42,7 +42,7 @@
       gap: 12px;
       align-items: start;
     }
-    @media (max-width: 1100px) {
+    @media (max-width: 700px) {
       .grid { grid-template-columns: 1fr; }
     }
     .card {
@@ -208,8 +208,10 @@
     <div class="grid">
       <!-- Left -->
       <aside class="card">
-        <div class="section-title">衛星モニタリング場所を選択してください</div>
+        <div class="section-title">箇所一覧</div>
         <div id="locationList"></div>
+        <div class="note">
+          ※ 左の箇所名を選ぶと、画像・グラフが切り替わります。
         </div>
       </aside>
 
@@ -640,7 +642,6 @@
 
     async function loadAndRender() {
       try {
-
         const candidates = buildCsvUrls();
         let text = null;
         let lastError = null;
@@ -655,7 +656,6 @@
           }
         }
         if (!text) throw lastError ?? new Error("CSV fetch failed");
-
         const { rows } = parseCSV(text);
 
         // date 昇順に整列（念のため）
