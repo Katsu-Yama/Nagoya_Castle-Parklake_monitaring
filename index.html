@@ -256,41 +256,45 @@
 
       <!-- Right -->
       <section class="card">
-        <div class="section-title">最新値（CSVの最新行 / loess）</div>
+        <div class="section-title">最新値（CSVの最新行 / 平準化曲線）</div>
 
         <div class="kpi-row">
           <div class="kpi">
-            <div class="label">NDCI_mean_loess</div>
+            <div class="label">NDCI（藻類Proxy）_mean_loess</div>
+
             <div class="value" id="kpiNdci">—</div>
             <div class="date" id="kpiDate">latest: —</div>
           </div>
           <div class="kpi">
-            <div class="label">NDTI_mean_loess</div>
+            <div class="label">NDTI（濁り度proxy）_mean_loess</div>
+
             <div class="value" id="kpiNdti">—</div>
             <div class="date" id="kpiDate2">latest: —</div>
           </div>
           <div class="kpi">
-            <div class="label">FAI_mean_loess</div>
+            <div class="label">FAI（浮遊藻類proxy）_mean_loess</div>
+
             <div class="value" id="kpiFai">—</div>
             <div class="date" id="kpiDate3">latest: —</div>
           </div>
         </div>
 
-        <div class="section-title">時系列（CSVからブラウザで描画 / loess）</div>
+        <div class="section-title">時系列（CSVからブラウザで描画 / 平準化曲線）</div>
 
         <div class="chart-card">
-          <div class="chart-title">loess（NDCI / NDTI / FAI）</div>
+          <div class="chart-title">平準化曲線（NDCI / NDTI / FAI）</div>
           <canvas id="chartLoess"></canvas>
         </div>
 
         <div class="chart-card" style="margin-bottom:0;">
-          <div class="chart-title">loess + 実測値（選択）</div>
+          <div class="chart-title">平準化曲線 + 実測値（選択）</div>
           <div class="select-row">
             <label for="metricSelect" class="muted">表示項目</label>
             <select id="metricSelect">
-              <option value="NDCI">NDCI</option>
-              <option value="NDTI">NDTI</option>
-              <option value="FAI">FAI</option>
+              <option value="NDCI">NDCI（藻類Proxy）</option>
+              <option value="NDTI">NDTI（濁り度proxy）</option>
+              <option value="FAI">FAI（浮遊藻類proxy）</option>
+
             </select>
           </div>
           <canvas id="chartSelected"></canvas>
@@ -569,16 +573,19 @@
     function renderSelectedChart(labels, series, metric) {
       const metricMap = {
         NDCI: {
+          label: "NDCI（藻類Proxy）",
           loess: series.ndciLoess,
           actual: series.ndci,
           color: "#2563eb"
         },
         NDTI: {
+          label: "NDTI（濁り度proxy）",
           loess: series.ndtiLoess,
           actual: series.ndti,
           color: "#0f766e"
         },
         FAI: {
+          label: "FAI（浮遊藻類proxy）",
           loess: series.faiLoess,
           actual: series.fai,
           color: "#7c3aed"
@@ -595,7 +602,7 @@
           labels,
           datasets: [
             {
-              label: `${metric}_mean_loess`,
+              label: `${current.label}_mean_loess`,
               data: current.loess,
               pointRadius: 0,
               borderWidth: 2,
@@ -603,7 +610,7 @@
               borderColor: current.color
             },
             {
-              label: `${metric}_mean (実測値)`,
+              label: `${current.label}_mean (実測値)`,
               data: current.actual,
               pointRadius: 1,
               borderWidth: 1,
@@ -619,7 +626,7 @@
           plugins: { legend: { display: true } },
           scales: {
             x: { ticks: { maxTicksLimit: 6 } },
-            y: { title: { display: true, text: `${metric} (loess + 実測)` } }
+            y: { title: { display: true, text: `${current.label} (平準化曲線 + 実測)` } }
           }
         }
       });
@@ -634,7 +641,7 @@
           labels,
           datasets: [
             {
-              label: "NDCI_mean_loess",
+              label: "NDCI（藻類Proxy）_mean_loess",
               data: series.ndciLoess,
               pointRadius: 0,
               borderWidth: 2,
@@ -642,7 +649,7 @@
               borderColor: "#2563eb"
             },
             {
-              label: "NDTI_mean_loess",
+              label: "NDTI（濁り度proxy）_mean_loess",
               data: series.ndtiLoess,
               pointRadius: 0,
               borderWidth: 2,
@@ -650,7 +657,7 @@
               borderColor: "#0f766e"
             },
             {
-              label: "FAI_mean_loess",
+              label: "FAI（浮遊藻類proxy）_mean_loess",
               data: series.faiLoess,
               pointRadius: 0,
               borderWidth: 2,
@@ -665,7 +672,7 @@
           plugins: { legend: { display: true } },
           scales: {
             x: { ticks: { maxTicksLimit: 6 } },
-            y: { title: { display: true, text: "loess" } }
+            y: { title: { display: true, text: "平準化曲線" } }
           }
         }
       });
