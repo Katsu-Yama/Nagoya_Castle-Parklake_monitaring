@@ -271,18 +271,8 @@
         <div class="section-title">時系列（CSVからブラウザで描画 / loess）</div>
 
         <div class="chart-card">
-          <div class="chart-title">藻類量proxy（NDCI_mean_loess）</div>
-          <canvas id="chartNdci"></canvas>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-title">濁度proxy（NDTI_mean_loess）</div>
-          <canvas id="chartNdti"></canvas>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-title">浮遊藻類proxy（FAI_mean_loess）</div>
-          <canvas id="chartFai"></canvas>
+          <div class="chart-title">loess（NDCI / NDTI / FAI）</div>
+          <canvas id="chartLoess"></canvas>
         </div>
 
         <div class="chart-card" style="margin-bottom:0;">
@@ -480,7 +470,7 @@
       return Number.isFinite(v) ? v : null;
     }
 
-    let chartNdci, chartFai, chartNdti, chartSelected;
+    let chartLoess, chartSelected;
 
     function makeLineChart(canvasId, labels, data, yLabel, color = "#2563eb") {
       const ctx = document.getElementById(canvasId);
@@ -579,6 +569,52 @@
       });
     }
 
+    function renderLoessChart(labels, series) {
+      if (chartLoess) chartLoess.destroy();
+      const ctx = document.getElementById("chartLoess");
+      chartLoess = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "NDCI_mean_loess",
+              data: series.ndciLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#2563eb"
+            },
+            {
+              label: "NDTI_mean_loess",
+              data: series.ndtiLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#0f766e"
+            },
+            {
+              label: "FAI_mean_loess",
+              data: series.faiLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#7c3aed"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 6 } },
+            y: { title: { display: true, text: "loess" } }
+          }
+        }
+      });
+    }
+
     async function loadAndRender() {
       try {
         const res = await fetch(buildCsvUrl(), { cache: "no-store" });
@@ -609,14 +645,12 @@
         document.getElementById("kpiDate2").textContent = `latest: ${latestDate}`;
         document.getElementById("kpiDate3").textContent = `latest: ${latestDate}`;
 
-        // 既存チャートがあれば破棄
-        if (chartNdci) chartNdci.destroy();
-        if (chartFai) chartFai.destroy();
-        if (chartNdti) chartNdti.destroy();
+        renderLoessChart(labels, { ndciLoess, ndtiLoess, faiLoess });
 
         chartNdci = makeLineChart("chartNdci", labels, ndciLoess, "NDCI_mean_loess", "#2563eb");
         chartNdti = makeLineChart("chartNdti", labels, ndtiLoess, "NDTI_mean_loess", "#0f766e");
         chartFai  = makeLineChart("chartFai",  labels, faiLoess,  "FAI_mean_loess", "#7c3aed");
+
 
         const metricSelect = document.getElementById("metricSelect");
         renderSelectedChart(labels, { ndci, ndciLoess, ndti, ndtiLoess, fai, faiLoess }, metricSelect.value);
