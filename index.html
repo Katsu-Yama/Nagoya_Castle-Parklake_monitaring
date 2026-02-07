@@ -10,24 +10,28 @@
 
   <style>
     :root {
-      --bg: #f5f7fb;
+      --bg: #f1f3f6;
       --card: #ffffff;
-      --border: #e5e7eb;
-      --text: #0f172a;
-      --muted: #64748b;
-      --blue: #2563eb;
+      --border: #d7dce3;
+      --text: #0b1527;
+      --muted: #5c6b80;
+      --blue: #1f3a5f;
+      --accent: #2f5f8f;
+      --card-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Segoe UI", system-ui, sans-serif;
       color: var(--text);
-      background: var(--bg);
+      background: radial-gradient(circle at top left, #f7f9fc, #eef1f6 45%, #e9edf3);
+      letter-spacing: 0.01em;
     }
     header {
-      background: linear-gradient(90deg, #1d4ed8, #2563eb);
-      color: #fff;
-      padding: 14px 18px;
+      background: linear-gradient(120deg, #0f1b2d, #1f3a5f 55%, #24476f);
+      color: #f8fafc;
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
     }
     header .title { font-weight: 700; font-size: 18px; }
     header .sub { font-size: 12px; opacity: .9; margin-top: 2px; }
@@ -45,27 +49,44 @@
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: var(--card-shadow);
     }
     .section-title {
       font-weight: 700;
-      margin: 0 0 10px 0;
-      font-size: 14px;
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #25324a;
     }
 
     /* left list */
     .reservoir-item {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 12px;
       margin-bottom: 10px;
       background: #fff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     }
     .reservoir-item.selected {
-      outline: 2px solid rgba(37,99,235,.25);
-      border-color: rgba(37,99,235,.45);
+      outline: none;
+      border-color: rgba(47,95,143,0.5);
+      box-shadow: 0 10px 24px rgba(47,95,143,0.16);
+      transform: translateY(-1px);
+    }
+    .reservoir-item.disabled {
+      color: var(--muted);
+      background: #f8fafc;
+      border-style: dashed;
+      cursor: not-allowed;
+    }
+    .reservoir-item.disabled .badge {
+      color: var(--muted);
+      background: #f1f5f9;
+      border-color: #e2e8f0;
     }
     .reservoir-item.disabled {
       color: var(--muted);
@@ -86,14 +107,14 @@
     }
     .badge {
       font-size: 11px;
-      padding: 2px 8px;
+      padding: 4px 10px;
       border-radius: 999px;
       border: 1px solid var(--border);
       color: var(--muted);
       background: #f8fafc;
       white-space: nowrap;
     }
-    .badge.ok { color: #166534; background: #f0fdf4; border-color: #bbf7d0; }
+    .badge.ok { color: #0f5132; background: #e6f4ea; border-color: #c4e3cc; }
     .badge.nodata { color: #475569; background: #f1f5f9; border-color: #e2e8f0; }
     .muted { color: var(--muted); font-size: 12px; }
     .note {
@@ -129,20 +150,22 @@
       cursor: pointer;
       font-size: 12px;
       line-height: 1;
+      color: #1f2a3d;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
     }
-    .btn:hover { border-color: rgba(37,99,235,.35); }
+    .btn:hover { border-color: rgba(47,95,143,.45); color: #0f1b2d; }
     .btn.primary {
-      background: rgba(37,99,235,.08);
-      border-color: rgba(37,99,235,.35);
-      color: #1d4ed8;
+      background: rgba(47,95,143,.12);
+      border-color: rgba(47,95,143,.45);
+      color: #1f3a5f;
       font-weight: 700;
     }
     .pill {
       font-size: 12px;
-      padding: 6px 10px;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: #fff;
+      background: #f8fafc;
       color: var(--muted);
     }
     .viewer-imgwrap {
@@ -153,8 +176,9 @@
       width: 70%;
       height: auto;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       background: #fff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     }
     @media (max-width: 1100px) {
       .viewer-img { width: 100%; }
@@ -169,21 +193,23 @@
     }
     .kpi {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 12px;
       background: #fff;
-      min-height: 68px;
+      min-height: 72px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
     .kpi .label { font-size: 11px; color: var(--muted); }
-    .kpi .value { font-size: 16px; font-weight: 800; margin-top: 4px; }
+    .kpi .value { font-size: 17px; font-weight: 800; margin-top: 4px; color: #10233b; }
     .kpi .date { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
     .chart-card {
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
+      border-radius: 12px;
+      padding: 12px;
       background: #fff;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
     .chart-title {
       font-size: 12px;
@@ -266,13 +292,11 @@
           </div>
           <div class="kpi">
             <div class="label">NDTI（濁り度proxy）_mean_loess</div>
-
             <div class="value" id="kpiNdti">—</div>
             <div class="date" id="kpiDate2">latest: —</div>
           </div>
           <div class="kpi">
             <div class="label">FAI（浮遊藻類proxy）_mean_loess</div>
-
             <div class="value" id="kpiFai">—</div>
             <div class="date" id="kpiDate3">latest: —</div>
           </div>
@@ -293,7 +317,6 @@
               <option value="NDCI">NDCI（藻類Proxy）</option>
               <option value="NDTI">NDTI（濁り度proxy）</option>
               <option value="FAI">FAI（浮遊藻類proxy）</option>
-
             </select>
           </div>
           <canvas id="chartSelected"></canvas>
