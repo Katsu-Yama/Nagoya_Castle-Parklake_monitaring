@@ -67,6 +67,17 @@
       outline: 2px solid rgba(37,99,235,.25);
       border-color: rgba(37,99,235,.45);
     }
+    .reservoir-item.disabled {
+      color: var(--muted);
+      background: #f8fafc;
+      border-style: dashed;
+      cursor: not-allowed;
+    }
+    .reservoir-item.disabled .badge {
+      color: var(--muted);
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }
     .reservoir-top {
       display: flex;
       justify-content: space-between;
@@ -205,10 +216,10 @@
     <div class="grid">
       <!-- Left -->
       <aside class="card">
-        <div class="section-title">衛星モニタリング箇所一覧</div>
+        <div class="section-title">箇所一覧</div>
         <div id="locationList"></div>
         <div class="note">
-          ※ 箇所名を選ぶと、右の画像・グラフが切り替わります。
+          ※ 左の箇所名を選ぶと、画像・グラフが切り替わります。
         </div>
       </aside>
 
@@ -301,7 +312,7 @@
     const LOCATIONS = [
       {
         id: "Nagoya_castle",
-        label: "Nagoya_castle",
+        label: "名古屋城",
         images: [
           "ndci_2025-12-05.png",
           "ndci_2025-12-10.png",
@@ -311,7 +322,7 @@
       },
       {
         id: "MeijouPark",
-        label: "MeijouPark",
+        label: "名城公園",
         images: [
           "ndci_2025-11-30.png",
           "ndci_2025-12-05.png",
@@ -321,7 +332,7 @@
       },
       {
         id: "TsurumaPark",
-        label: "TsurumaPark",
+        label: "鶴舞公園",
         images: [
           "ndci_2025-11-30.png",
           "ndci_2025-12-05.png",
@@ -401,6 +412,15 @@
       return images;
     }
 
+    const PENDING_LOCATIONS = [
+      "平和公園",
+      "庄内緑地",
+      "新海池公園",
+      "細口池公園",
+      "大池",
+      "アマ池"
+    ];
+
     function renderLocationList() {
       const list = document.getElementById("locationList");
       list.innerHTML = "";
@@ -426,6 +446,20 @@
           setImageByIndex(0);
           loadAndRender();
         });
+        list.appendChild(item);
+      });
+      PENDING_LOCATIONS.forEach(label => {
+        const item = document.createElement("div");
+        item.className = "reservoir-item disabled";
+        item.innerHTML = `
+          <div class="reservoir-top">
+            <div>
+              <div style="font-weight:700;">${label}</div>
+              <div class="muted">準備中</div>
+            </div>
+            <span class="badge nodata">準備中</span>
+          </div>
+        `;
         list.appendChild(item);
       });
     }
