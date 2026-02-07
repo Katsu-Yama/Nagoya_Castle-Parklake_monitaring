@@ -38,12 +38,9 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: 260px 1fr 460px;
+      grid-template-columns: 260px minmax(0, 1fr) 460px;
       gap: 12px;
       align-items: start;
-    }
-    @media (max-width: 1100px) {
-      .grid { grid-template-columns: 1fr; }
     }
     .card {
       background: var(--card);
@@ -69,6 +66,17 @@
     .reservoir-item.selected {
       outline: 2px solid rgba(37,99,235,.25);
       border-color: rgba(37,99,235,.45);
+    }
+    .reservoir-item.disabled {
+      color: var(--muted);
+      background: #f8fafc;
+      border-style: dashed;
+      cursor: not-allowed;
+    }
+    .reservoir-item.disabled .badge {
+      color: var(--muted);
+      background: #f1f5f9;
+      border-color: #e2e8f0;
     }
     .reservoir-top {
       display: flex;
@@ -183,6 +191,18 @@
       margin: 0 0 6px 0;
     }
     canvas { width: 100% !important; height: 220px !important; }
+    .select-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .select-row select {
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -196,30 +216,10 @@
     <div class="grid">
       <!-- Left -->
       <aside class="card">
-        <div class="section-title">貯水池一覧</div>
-
-        <div class="reservoir-item selected">
-          <div class="reservoir-top">
-            <div>
-              <div style="font-weight:700;">烏原貯水池</div>
-              <div class="muted">データあり（表示対象）</div>
-            </div>
-            <span class="badge ok">表示中</span>
-          </div>
-        </div>
-
-        <div class="reservoir-item">
-          <div class="reservoir-top">
-            <div>
-              <div style="font-weight:700;">布引貯水池</div>
-              <div class="muted">データなし</div>
-            </div>
-            <span class="badge nodata">データ未取り込み</span>
-          </div>
-        </div>
-
+        <div class="section-title">箇所一覧</div>
+        <div id="locationList"></div>
         <div class="note">
-          ※ 現状は烏原貯水池のみのファイルを表示します。布引貯水池は将来追加予定のプレースホルダです。
+          ※ 左の箇所名を選ぶと、画像・グラフが切り替わります。
         </div>
       </aside>
 
@@ -249,48 +249,51 @@
 
           <div class="note">
             ※ 日付選択は「その日付に最も近い画像」を表示します。<br/>
-            ※ 画像・CSVは GitHub Pages で配信できる場所（例：<code>./data/</code>）に置いてください。
+            ※ 画像・CSVは GitHub Pages で配信できる場所（例：<code>./Nagoya_castle/</code>）に置いてください。
           </div>
         </div>
       </main>
 
       <!-- Right -->
       <section class="card">
-        <div class="section-title">最新値（CSVの最新行）</div>
+        <div class="section-title">最新値（CSVの最新行 / loess）</div>
 
         <div class="kpi-row">
           <div class="kpi">
-            <div class="label">NDCI_mean</div>
+            <div class="label">NDCI_mean_loess</div>
             <div class="value" id="kpiNdci">—</div>
             <div class="date" id="kpiDate">latest: —</div>
           </div>
           <div class="kpi">
-            <div class="label">FAI_mean（fai_floating）</div>
-            <div class="value" id="kpiFai">—</div>
+            <div class="label">NDTI_mean_loess</div>
+            <div class="value" id="kpiNdti">—</div>
             <div class="date" id="kpiDate2">latest: —</div>
           </div>
           <div class="kpi">
-            <div class="label">NDTI_mean</div>
-            <div class="value" id="kpiNdti">—</div>
+            <div class="label">FAI_mean_loess</div>
+            <div class="value" id="kpiFai">—</div>
             <div class="date" id="kpiDate3">latest: —</div>
           </div>
         </div>
 
-        <div class="section-title">時系列（CSVからブラウザで描画）</div>
+        <div class="section-title">時系列（CSVからブラウザで描画 / loess）</div>
 
         <div class="chart-card">
-          <div class="chart-title">藻類量proxy（NDCI）</div>
-          <canvas id="chartNdci"></canvas>
-        </div>
-
-        <div class="chart-card">
-          <div class="chart-title">浮遊藻類proxy（FAI / fai_floating）</div>
-          <canvas id="chartFai"></canvas>
+          <div class="chart-title">loess（NDCI / NDTI / FAI）</div>
+          <canvas id="chartLoess"></canvas>
         </div>
 
         <div class="chart-card" style="margin-bottom:0;">
-          <div class="chart-title">濁度proxy（NDTI）</div>
-          <canvas id="chartNdti"></canvas>
+          <div class="chart-title">loess + 実測値（選択）</div>
+          <div class="select-row">
+            <label for="metricSelect" class="muted">表示項目</label>
+            <select id="metricSelect">
+              <option value="NDCI">NDCI</option>
+              <option value="NDTI">NDTI</option>
+              <option value="FAI">FAI</option>
+            </select>
+          </div>
+          <canvas id="chartSelected"></canvas>
         </div>
 
         <div class="note" style="margin-top:8px;">
@@ -303,37 +306,66 @@
   <script>
     // =========================
     // GitHub Pages配置前提のパス
-    // - あなたの想定：画像/CSVは repo の /data に置く
-    // - Pagesで配信されるURLは tree/ ではなく、サイト上の相対パスになります
-    //   例: https://<user>.github.io/<repo>/data/xxxx.png
+    // - 画像/CSVは repo の各ディレクトリ配下に置く
+    //   例: https://<user>.github.io/<repo>/Nagoya_castle/images/xxxx.png
     // =========================
-    const DATA_DIR = "./data"; // Pages上で html と同階層に data/ がある想定
-    const CSV_URL  = `${DATA_DIR}/timeseries_ndci_ndti_fai.csv`;
-
-    // 画像は「日付 -> ファイル名」の対応で管理（必要ならここを増やす）
-    const IMAGES = [
-      { date: "2025-12-28", file: "2025-12-28.png" },
-      { date: "2025-12-23", file: "2025-12-23.png" },
-      { date: "2025-12-20", file: "2025-12-20.png" },
-      { date: "2025-12-18", file: "2025-12-18.png" }
+    const LOCATIONS = [
+      {
+        id: "Nagoya_castle",
+        label: "名古屋城",
+        images: [
+          "ndci_2025-12-05.png",
+          "ndci_2025-12-10.png",
+          "ndci_2025-12-15.png",
+          "ndci_2025-12-17.png"
+        ]
+      },
+      {
+        id: "MeijouPark",
+        label: "名城公園",
+        images: [
+          "ndci_2025-11-30.png",
+          "ndci_2025-12-05.png",
+          "ndci_2025-12-10.png",
+          "ndci_2025-12-15.png"
+        ]
+      },
+      {
+        id: "TsurumaPark",
+        label: "鶴舞公園",
+        images: [
+          "ndci_2025-11-30.png",
+          "ndci_2025-12-05.png",
+          "ndci_2025-12-10.png",
+          "ndci_2025-12-15.png"
+        ]
+      }
     ];
 
     // --- Image viewer state ---
     let currentIndex = 0; // 0 = 最新（先頭）
+    let currentLocation = LOCATIONS[0];
+    let currentImages = [];
 
     const elImg = document.getElementById("ndciImg");
     const elLabel = document.getElementById("imgLabel");
     const elDatePicker = document.getElementById("datePicker");
 
     function setImageByIndex(idx) {
+      if (!currentImages.length) {
+        elImg.removeAttribute("src");
+        elLabel.textContent = "表示中：画像なし";
+        elDatePicker.value = "";
+        return;
+      }
       if (idx < 0) idx = 0;
-      if (idx > IMAGES.length - 1) idx = IMAGES.length - 1;
+      if (idx > currentImages.length - 1) idx = currentImages.length - 1;
       currentIndex = idx;
 
-      const it = IMAGES[currentIndex];
-      elImg.src = `${DATA_DIR}/${it.file}`;
-      elImg.alt = `NDCI ${it.date}`;
-      elLabel.textContent = `表示中：${it.date}（${currentIndex + 1}/${IMAGES.length}）`;
+      const it = currentImages[currentIndex];
+      elImg.src = `${currentLocation.id}/images/${it.file}`;
+      elImg.alt = `NDCI ${currentLocation.label} ${it.date}`;
+      elLabel.textContent = `表示中：${currentLocation.label} / ${it.date}（${currentIndex + 1}/${currentImages.length}）`;
 
       // datePickerは "表示画像の日付" に合わせる（ユーザー選択の近傍にスナップする挙動が直感的）
       elDatePicker.value = it.date;
@@ -348,8 +380,8 @@
       const target = dateToNum(targetDateStr);
       let bestIdx = 0;
       let bestDist = Infinity;
-      for (let i = 0; i < IMAGES.length; i++) {
-        const dist = Math.abs(dateToNum(IMAGES[i].date) - target);
+      for (let i = 0; i < currentImages.length; i++) {
+        const dist = Math.abs(dateToNum(currentImages[i].date) - target);
         if (dist < bestDist) {
           bestDist = dist;
           bestIdx = i;
@@ -367,8 +399,106 @@
       setImageByNearestDate(v);
     });
 
-    // 初期表示
-    setImageByIndex(0);
+    function parseImageDate(file) {
+      const match = file.match(/(\d{4}-\d{2}-\d{2})/);
+      return match ? match[1] : "";
+    }
+
+    function buildImages(list) {
+      const images = list
+        .map(file => ({ file, date: parseImageDate(file) }))
+        .filter(item => item.date);
+      images.sort((a, b) => dateToNum(b.date) - dateToNum(a.date));
+      return images;
+    }
+
+    const PENDING_LOCATIONS = [
+      "平和公園",
+      "庄内緑地",
+      "新海池公園",
+      "細口池公園",
+      "大池",
+      "アマ池"
+    ];
+
+    function renderLocationList() {
+      const list = document.getElementById("locationList");
+      list.innerHTML = "";
+      LOCATIONS.forEach(location => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `reservoir-item ${location.id === currentLocation.id ? "selected" : ""}`;
+        item.innerHTML = `
+          <div class="reservoir-top">
+            <div>
+              <div style="font-weight:700;">${location.label}</div>
+              <div class="muted">${location.id === currentLocation.id ? "表示中" : "クリックで表示"}</div>
+            </div>
+            <span class="badge ok">${location.id === currentLocation.id ? "表示中" : "選択"}</span>
+          </div>
+        `;
+        item.addEventListener("click", () => {
+          if (currentLocation.id === location.id) return;
+          currentLocation = location;
+          currentImages = buildImages(location.images);
+          currentIndex = 0;
+          renderLocationList();
+          setImageByIndex(0);
+          loadAndRender();
+        });
+        list.appendChild(item);
+      });
+      PENDING_LOCATIONS.forEach(label => {
+        const item = document.createElement("div");
+        item.className = "reservoir-item disabled";
+        item.innerHTML = `
+          <div class="reservoir-top">
+            <div>
+              <div style="font-weight:700;">${label}</div>
+              <div class="muted">準備中</div>
+            </div>
+            <span class="badge nodata">準備中</span>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function getRepoInfo() {
+      const host = window.location.hostname;
+      const pathParts = window.location.pathname.split("/").filter(Boolean);
+      if (host.endsWith("github.io")) {
+        const owner = host.split(".")[0];
+        const repo = pathParts[0];
+        return owner && repo ? { owner, repo, branch: "main" } : null;
+      }
+      if (host === "github.com" && pathParts.length >= 2) {
+        const [owner, repo, type, branch] = pathParts;
+        if (type === "blob" || type === "tree") {
+          return owner && repo && branch ? { owner, repo, branch } : null;
+        }
+        return owner && repo ? { owner, repo, branch: "main" } : null;
+      }
+      return null;
+    }
+
+    function buildCsvUrls() {
+      const relative = `./${currentLocation.id}/data/timeseries_ndci_ndti_fai.csv`;
+      const repoInfo = getRepoInfo();
+      if (!repoInfo) {
+        return [relative];
+      }
+      const rawBase = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}`;
+      const raw = `${rawBase}/${currentLocation.id}/data/timeseries_ndci_ndti_fai.csv`;
+      return [relative, raw];
+    }
+
+    function initLocation() {
+      currentLocation = LOCATIONS[0];
+      currentImages = buildImages(currentLocation.images);
+      renderLocationList();
+      setImageByIndex(0);
+    }
 
     // =========================
     // CSV -> Charts (Chart.js)
@@ -377,6 +507,9 @@
       // シンプルCSV想定（カンマ区切り、クォートや改行を含む複雑ケースは想定外）
       const lines = text.trim().split(/\r?\n/);
       const header = lines[0].split(",").map(s => s.trim());
+      if (header.length && header[0].startsWith("\uFEFF")) {
+        header[0] = header[0].replace("\uFEFF", "");
+      }
       const rows = [];
       for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
@@ -393,9 +526,9 @@
       return Number.isFinite(v) ? v : null;
     }
 
-    let chartNdci, chartFai, chartNdti;
+    let chartLoess, chartSelected;
 
-    function makeLineChart(canvasId, labels, data, yLabel) {
+    function makeLineChart(canvasId, labels, data, yLabel, color = "#2563eb") {
       const ctx = document.getElementById(canvasId);
       return new Chart(ctx, {
         type: "line",
@@ -406,7 +539,8 @@
             data,
             pointRadius: 0,
             borderWidth: 2,
-            tension: 0.2
+            tension: 0.2,
+            borderColor: color
           }]
         },
         options: {
@@ -427,11 +561,132 @@
       });
     }
 
+    function formatValue(value) {
+      if (value === null || value === undefined) return "—";
+      return Number.isFinite(value) ? value.toFixed(4) : "—";
+    }
+
+    function renderSelectedChart(labels, series, metric) {
+      const metricMap = {
+        NDCI: {
+          loess: series.ndciLoess,
+          actual: series.ndci,
+          color: "#2563eb"
+        },
+        NDTI: {
+          loess: series.ndtiLoess,
+          actual: series.ndti,
+          color: "#0f766e"
+        },
+        FAI: {
+          loess: series.faiLoess,
+          actual: series.fai,
+          color: "#7c3aed"
+        }
+      };
+      const current = metricMap[metric];
+      if (!current) return;
+
+      if (chartSelected) chartSelected.destroy();
+      const ctx = document.getElementById("chartSelected");
+      chartSelected = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: `${metric}_mean_loess`,
+              data: current.loess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: current.color
+            },
+            {
+              label: `${metric}_mean (実測値)`,
+              data: current.actual,
+              pointRadius: 1,
+              borderWidth: 1,
+              tension: 0.1,
+              borderColor: "#94a3b8",
+              backgroundColor: "rgba(148,163,184,0.2)"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 6 } },
+            y: { title: { display: true, text: `${metric} (loess + 実測)` } }
+          }
+        }
+      });
+    }
+
+    function renderLoessChart(labels, series) {
+      if (chartLoess) chartLoess.destroy();
+      const ctx = document.getElementById("chartLoess");
+      chartLoess = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "NDCI_mean_loess",
+              data: series.ndciLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#2563eb"
+            },
+            {
+              label: "NDTI_mean_loess",
+              data: series.ndtiLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#0f766e"
+            },
+            {
+              label: "FAI_mean_loess",
+              data: series.faiLoess,
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.2,
+              borderColor: "#7c3aed"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true } },
+          scales: {
+            x: { ticks: { maxTicksLimit: 6 } },
+            y: { title: { display: true, text: "loess" } }
+          }
+        }
+      });
+    }
+
     async function loadAndRender() {
       try {
-        const res = await fetch(CSV_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
-        const text = await res.text();
+        const candidates = buildCsvUrls();
+        let text = null;
+        let lastError = null;
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
+            text = await res.text();
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        if (!text) throw lastError ?? new Error("CSV fetch failed");
         const { rows } = parseCSV(text);
 
         // date 昇順に整列（念のため）
@@ -439,29 +694,31 @@
 
         const labels = rows.map(r => r.date);
         const ndci = rows.map(r => toNumber(r.NDCI_mean));
-        const fai  = rows.map(r => toNumber(r.FAI_mean));
+        const ndciLoess = rows.map(r => toNumber(r.NDCI_mean_loess));
         const ndti = rows.map(r => toNumber(r.NDTI_mean));
+        const ndtiLoess = rows.map(r => toNumber(r.NDTI_mean_loess));
+        const fai  = rows.map(r => toNumber(r.FAI_mean));
+        const faiLoess = rows.map(r => toNumber(r.FAI_mean_loess));
 
         // 最新値（最後の行）
         const latest = rows[rows.length - 1];
         const latestDate = latest?.date ?? "—";
 
-        document.getElementById("kpiNdci").textContent = (toNumber(latest?.NDCI_mean) ?? "—").toString().slice(0, 6);
-        document.getElementById("kpiFai").textContent  = (toNumber(latest?.FAI_mean) ?? "—").toString().slice(0, 6);
-        document.getElementById("kpiNdti").textContent = (toNumber(latest?.NDTI_mean) ?? "—").toString().slice(0, 7);
+        document.getElementById("kpiNdci").textContent = formatValue(toNumber(latest?.NDCI_mean_loess));
+        document.getElementById("kpiNdti").textContent = formatValue(toNumber(latest?.NDTI_mean_loess));
+        document.getElementById("kpiFai").textContent  = formatValue(toNumber(latest?.FAI_mean_loess));
 
         document.getElementById("kpiDate").textContent  = `latest: ${latestDate}`;
         document.getElementById("kpiDate2").textContent = `latest: ${latestDate}`;
         document.getElementById("kpiDate3").textContent = `latest: ${latestDate}`;
 
-        // 既存チャートがあれば破棄
-        if (chartNdci) chartNdci.destroy();
-        if (chartFai) chartFai.destroy();
-        if (chartNdti) chartNdti.destroy();
+        renderLoessChart(labels, { ndciLoess, ndtiLoess, faiLoess });
 
-        chartNdci = makeLineChart("chartNdci", labels, ndci, "NDCI_mean");
-        chartFai  = makeLineChart("chartFai",  labels, fai,  "FAI_mean");
-        chartNdti = makeLineChart("chartNdti", labels, ndti, "NDTI_mean");
+        const metricSelect = document.getElementById("metricSelect");
+        renderSelectedChart(labels, { ndci, ndciLoess, ndti, ndtiLoess, fai, faiLoess }, metricSelect.value);
+        metricSelect.onchange = () => {
+          renderSelectedChart(labels, { ndci, ndciLoess, ndti, ndtiLoess, fai, faiLoess }, metricSelect.value);
+        };
 
       } catch (err) {
         console.error(err);
@@ -471,6 +728,7 @@
       }
     }
 
+    initLocation();
     loadAndRender();
   </script>
 </body>
