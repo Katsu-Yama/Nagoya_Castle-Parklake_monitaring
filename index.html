@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>貯水池藻類監視ダッシュボード（試作：画像切替＋CSVグラフ）</title>
+  <title>藻類監視ダッシュボード（プロトタイプ：画像切替＋CSVグラフ）</title>
 
   <!-- Chart.js (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -208,8 +208,8 @@
 
 <body>
   <header>
-    <div class="title">貯水池藻類監視ダッシュボード（試作版）</div>
-    <div class="sub">画像は切替表示、時系列はCSVを読み込みブラウザで描画（GitHub Pages想定）</div>
+    <div class="title">藻類監視ダッシュボード（試作版）</div>
+    <div class="sub">画像は切替表示、時系列はCSVを読み込み描画（GitHub Pages使用）</div>
   </header>
 
   <div class="wrap">
@@ -261,16 +261,19 @@
         <div class="kpi-row">
           <div class="kpi">
             <div class="label">NDCI（藻類Proxy）_mean_loess</div>
+
             <div class="value" id="kpiNdci">—</div>
             <div class="date" id="kpiDate">latest: —</div>
           </div>
           <div class="kpi">
             <div class="label">NDTI（濁り度proxy）_mean_loess</div>
+
             <div class="value" id="kpiNdti">—</div>
             <div class="date" id="kpiDate2">latest: —</div>
           </div>
           <div class="kpi">
             <div class="label">FAI（浮遊藻類proxy）_mean_loess</div>
+
             <div class="value" id="kpiFai">—</div>
             <div class="date" id="kpiDate3">latest: —</div>
           </div>
@@ -291,6 +294,7 @@
               <option value="NDCI">NDCI（藻類Proxy）</option>
               <option value="NDTI">NDTI（濁り度proxy）</option>
               <option value="FAI">FAI（浮遊藻類proxy）</option>
+
             </select>
           </div>
           <canvas id="chartSelected"></canvas>
