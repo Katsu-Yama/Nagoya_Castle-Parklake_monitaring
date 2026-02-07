@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>貯水池藻類監視ダッシュボード（試作：画像切替＋CSVグラフ）</title>
+  <title>藻類監視ダッシュボード（プロトタイプ：画像切替＋CSVグラフ）</title>
 
   <!-- Chart.js (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -646,6 +646,11 @@
         document.getElementById("kpiDate3").textContent = `latest: ${latestDate}`;
 
         renderLoessChart(labels, { ndciLoess, ndtiLoess, faiLoess });
+
+        chartNdci = makeLineChart("chartNdci", labels, ndciLoess, "NDCI_mean_loess", "#2563eb");
+        chartNdti = makeLineChart("chartNdti", labels, ndtiLoess, "NDTI_mean_loess", "#0f766e");
+        chartFai  = makeLineChart("chartFai",  labels, faiLoess,  "FAI_mean_loess", "#7c3aed");
+
 
         const metricSelect = document.getElementById("metricSelect");
         renderSelectedChart(labels, { ndci, ndciLoess, ndti, ndtiLoess, fai, faiLoess }, metricSelect.value);
