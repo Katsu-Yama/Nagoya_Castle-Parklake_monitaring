@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>貯水池藻類監視ダッシュボード（試作：画像切替＋CSVグラフ）</title>
+  <title>藻類監視ダッシュボード（プロトタイプ：画像切替＋CSVグラフ）</title>
 
   <!-- Chart.js (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -642,6 +642,7 @@
 
     async function loadAndRender() {
       try {
+
         const candidates = buildCsvUrls();
         let text = null;
         let lastError = null;
@@ -656,6 +657,7 @@
           }
         }
         if (!text) throw lastError ?? new Error("CSV fetch failed");
+
         const { rows } = parseCSV(text);
 
         // date 昇順に整列（念のため）
