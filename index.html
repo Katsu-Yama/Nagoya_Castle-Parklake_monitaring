@@ -433,8 +433,33 @@
       });
     }
 
-    function buildCsvUrl() {
-      return `${currentLocation.id}/data/timeseries_ndci_ndti_fai.csv`;
+    function getRepoInfo() {
+      const host = window.location.hostname;
+      const pathParts = window.location.pathname.split("/").filter(Boolean);
+      if (host.endsWith("github.io")) {
+        const owner = host.split(".")[0];
+        const repo = pathParts[0];
+        return owner && repo ? { owner, repo, branch: "main" } : null;
+      }
+      if (host === "github.com" && pathParts.length >= 2) {
+        const [owner, repo, type, branch] = pathParts;
+        if (type === "blob" || type === "tree") {
+          return owner && repo && branch ? { owner, repo, branch } : null;
+        }
+        return owner && repo ? { owner, repo, branch: "main" } : null;
+      }
+      return null;
+    }
+
+    function buildCsvUrls() {
+      const relative = `./${currentLocation.id}/data/timeseries_ndci_ndti_fai.csv`;
+      const repoInfo = getRepoInfo();
+      if (!repoInfo) {
+        return [relative];
+      }
+      const rawBase = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}`;
+      const raw = `${rawBase}/${currentLocation.id}/data/timeseries_ndci_ndti_fai.csv`;
+      return [relative, raw];
     }
 
     function initLocation() {
@@ -617,9 +642,22 @@
 
     async function loadAndRender() {
       try {
-        const res = await fetch(buildCsvUrl(), { cache: "no-store" });
-        if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
-        const text = await res.text();
+
+        const candidates = buildCsvUrls();
+        let text = null;
+        let lastError = null;
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (!res.ok) throw new Error(`CSV fetch failed: ${res.status}`);
+            text = await res.text();
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        if (!text) throw lastError ?? new Error("CSV fetch failed");
+
         const { rows } = parseCSV(text);
 
         // date 昇順に整列（念のため）
@@ -646,11 +684,6 @@
         document.getElementById("kpiDate3").textContent = `latest: ${latestDate}`;
 
         renderLoessChart(labels, { ndciLoess, ndtiLoess, faiLoess });
-
-        chartNdci = makeLineChart("chartNdci", labels, ndciLoess, "NDCI_mean_loess", "#2563eb");
-        chartNdti = makeLineChart("chartNdti", labels, ndtiLoess, "NDTI_mean_loess", "#0f766e");
-        chartFai  = makeLineChart("chartFai",  labels, faiLoess,  "FAI_mean_loess", "#7c3aed");
-
 
         const metricSelect = document.getElementById("metricSelect");
         renderSelectedChart(labels, { ndci, ndciLoess, ndti, ndtiLoess, fai, faiLoess }, metricSelect.value);
