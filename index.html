@@ -32,6 +32,25 @@
       color: #f8fafc;
       padding: 16px 22px;
       border-bottom: 1px solid rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .header-date {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      white-space: nowrap;
+
     }
     header .title { font-weight: 700; font-size: 18px; }
     header .sub { font-size: 12px; opacity: .9; margin-top: 2px; }
@@ -76,17 +95,6 @@
       border-color: rgba(47,95,143,0.5);
       box-shadow: 0 10px 24px rgba(47,95,143,0.16);
       transform: translateY(-1px);
-    }
-    .reservoir-item.disabled {
-      color: var(--muted);
-      background: #f8fafc;
-      border-style: dashed;
-      cursor: not-allowed;
-    }
-    .reservoir-item.disabled .badge {
-      color: var(--muted);
-      background: #f1f5f9;
-      border-color: #e2e8f0;
     }
     .reservoir-item.disabled {
       color: var(--muted);
@@ -234,8 +242,11 @@
 
 <body>
   <header>
-    <div class="title">藻類監視ダッシュボード（試作版）</div>
-    <div class="sub">画像は切替表示、時系列はCSVを読み込み描画（GitHub Pages使用）</div>
+    <div class="header-left">
+      <div class="title">貯水池藻類監視ダッシュボード（試作版）</div>
+      <div class="sub">画像は切替表示、時系列はCSVを読み込み（GitHub Pages）</div>
+    </div>
+    <div class="header-date">2025年12月20日</div>
   </header>
 
   <div class="wrap">
@@ -245,7 +256,7 @@
         <div class="section-title">箇所一覧</div>
         <div id="locationList"></div>
         <div class="note">
-          ※ 箇所名を選ぶと、画像・グラフが切り替わります。
+         ※ 箇所名を選ぶと、画像・グラフが切り替わります。
         </div>
       </aside>
 
@@ -286,7 +297,6 @@
         <div class="kpi-row">
           <div class="kpi">
             <div class="label">NDCI（藻類Proxy）_mean_loess</div>
-
             <div class="value" id="kpiNdci">—</div>
             <div class="date" id="kpiDate">latest: —</div>
           </div>
@@ -303,6 +313,7 @@
         </div>
 
         <div class="section-title">時系列グラフ</div>
+
 
         <div class="chart-card">
           <div class="chart-title">平準化曲線（NDCI / NDTI / FAI）</div>
